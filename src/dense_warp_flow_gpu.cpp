@@ -18,18 +18,26 @@
 #include <iostream>
 
 #include "warp_flow.h"
+#include "path_tools.h"
 
 using namespace cv;
 using namespace cv::cuda;
 using namespace std;
 
-void calcDenseWarpFlowGPU(string file_name, int bound, int type, int step, int dev_id,
-					  std::vector<std::vector<uchar> >& output_x,
-					  std::vector<std::vector<uchar> >& output_y){
+void calcDenseWarpFlowGPU(string file_name, string dump_path, int bound, int type, int step, int dev_id){
 	VideoCapture video_stream(file_name);
 	CHECK(video_stream.isOpened())<<"Cannot open video stream \""
 								  <<file_name
 								  <<"\" for optical flow extraction.";
+
+	auto avg_fps = video_stream.get(cv::CAP_PROP_FPS);
+	auto width = video_stream.get(cv::CAP_PROP_FRAME_WIDTH);
+	auto height = video_stream.get(cv::CAP_PROP_FRAME_HEIGHT);
+
+	cv::VideoWriter wrt_x(safelyJoinPath(dump_path, "x.mp4"), cv::VideoWriter::fourcc('m','p','4','v'), 
+                            avg_fps, cv::Size(int(width), int(height)), 0);
+	cv::VideoWriter wrt_y(safelyJoinPath(dump_path, "y.mp4"), cv::VideoWriter::fourcc('m','p','4','v'), 
+						avg_fps, cv::Size(int(width), int(height)), 0);
 
     // OpenCV 3.1.0 SURF interface
     //
@@ -61,7 +69,7 @@ void calcDenseWarpFlowGPU(string file_name, int bound, int type, int step, int d
 		//build mats for the first frame
 		if (!initialized){
 			video_stream >> capture_frame;
-			if (capture_frame.empty()) return; // read frames until end
+			if (capture_frame.empty()) break; // read frames until end
 			initializeMats(capture_frame, capture_image, capture_gray,
 						   prev_image, prev_gray);
 			capture_frame.copyTo(prev_image);
@@ -77,7 +85,7 @@ void calcDenseWarpFlowGPU(string file_name, int bound, int type, int step, int d
 			for(int s = 0; s < step; ++s){
 				video_stream >> capture_frame;
 				cnt ++;
-				if (capture_frame.empty()) return; // read frames until end
+				if (capture_frame.empty()) break; // read frames until end
 			}
 		}else {
 			capture_frame.copyTo(capture_image);
@@ -160,11 +168,19 @@ void calcDenseWarpFlowGPU(string file_name, int bound, int type, int step, int d
             planes[0].download(flow_x);
             planes[1].download(flow_y);
 
-			vector<uchar> str_x, str_y;
-			encodeFlowMap(flow_x, flow_y, str_x, str_y, bound);
+			Mat flow_img_x(flow_x.size(), CV_8UC1);
+    		Mat flow_img_y(flow_y.size(), CV_8UC1);
 
-			output_x.push_back(str_x);
-			output_y.push_back(str_y);
+			convertFlowToImage(flow_x, flow_y, flow_img_x, flow_img_y, -bound, bound);
+
+			wrt_x << flow_img_x;
+			wrt_y << flow_img_y;
+
+			// vector<uchar> str_x, str_y;
+			// encodeFlowMap(flow_x, flow_y, str_x, str_y, bound);
+
+			// output_x.push_back(str_x);
+			// output_y.push_back(str_y);
 
 			std::swap(prev_gray, capture_gray);
 			std::swap(prev_image, capture_image);
@@ -179,10 +195,12 @@ void calcDenseWarpFlowGPU(string file_name, int bound, int type, int step, int d
 				// read frames until end
 			}
 			if (!hasnext){
-				return;
+				break;
 			}
 		}
 
 
 	}
+	wrt_x.release();
+	wrt_y.release();
 }
