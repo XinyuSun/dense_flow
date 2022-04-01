@@ -15,8 +15,19 @@ else()
 endif()
 
 
-find_package( OpenCV REQUIRED )
-find_package( LibZip REQUIRED )
+find_package( OpenCV REQUIRED 
+	PATHS /mnt/cephfs/home/sunxinyu/local/opencv4
+	NO_DEFAULT_PATH)
+
+set(LIBZIP_DIR /mnt/cephfs/home/sunxinyu/local/libzip)
+set(LIBZIP_INCLUDE_DIR_ZIP ${LIBZIP_DIR}/include)
+set(LIBZIP_INCLUDE_DIR_ZIPCONF ${LIBZIP_DIR}/include)
+find_library(LIBZIP_LIBRARY 
+    NAMES zip
+    PATHS ${LIBZIP_DIR}/lib NO_DEFAULT_PATH)
+
+message(${LIBZIP_DIR})
+message(${LIBZIP_LIBRARY})
 
 # BOOST
 FIND_PACKAGE(Boost REQUIRED python)
