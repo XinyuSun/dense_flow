@@ -42,6 +42,7 @@ int main(int argc, char** argv){
 			"{ b bound       | 20      | specify the maximum of optical flow}"
 			"{ t type        | 0       | specify the optical flow algorithm }"
 			"{ s step        | 1       | specify the step for frame sampling}"
+            "{ g num_gpu     | 8       | number of gpu}"
 		};
 
 	CommandLineParser cmd(argc, argv, keys);
@@ -51,6 +52,7 @@ int main(int argc, char** argv){
 	int bound = cmd.get<int>("bound");
     int type  = cmd.get<int>("type");
     int step = cmd.get<int>("step");
+    int num_gpu = cmd.get<int>("num_gpu");
 
     cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
 
@@ -77,7 +79,7 @@ int main(int argc, char** argv){
      * * * * * * * * * * * * * * * */
     int start_idx = rank_id * lines / num_process;
     int end_idx = rank_id == (num_process - 1) ? lines : (rank_id + 1) * lines / num_process;
-    int gpu_id = rank_id % 8;
+    int gpu_id = rank_id % num_gpu;
 
     printf("process %d ready! getting jobs %d-%d, total %d, using gpu %d\n", rank_id, start_idx, end_idx, end_idx - start_idx, gpu_id);
     fflush(stdout);
