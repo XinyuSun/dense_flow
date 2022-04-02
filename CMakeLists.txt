@@ -19,6 +19,8 @@ find_package( OpenCV REQUIRED
 	PATHS /mnt/cephfs/home/sunxinyu/local/opencv4
 	NO_DEFAULT_PATH)
 
+message(${OpenCV_LIBS})
+
 find_package( LibZip REQUIRED )
 
 if(LibZip_FOUND)
@@ -49,7 +51,8 @@ endif()
 include_directories( ${OpenCV_INCLUDE_DIRS} ${LIBZIP_INCLUDE_DIR_ZIP} ${LIBZIP_INCLUDE_DIR_ZIPCONF} include/ include/easylogging++/src include/CLUE/include)
 # include_directories(SYSTEM ${Boost_INCLUDE_DIR} ${PYTHON_INCLUDE_DIR})
 
-add_library(denseflow src/common.cpp src/dense_flow.cpp src/dense_flow_gpu.cpp src/dense_warp_flow_gpu.cpp src/zip_utils.cpp src/path_tools.cpp)
+# add_library(denseflow src/common.cpp src/dense_flow.cpp src/dense_flow_gpu.cpp src/dense_warp_flow_gpu.cpp src/zip_utils.cpp src/path_tools.cpp)
+add_library(denseflow src/common.cpp src/dense_warp_flow_gpu.cpp src/zip_utils.cpp src/path_tools.cpp)
 target_link_libraries( denseflow ${OpenCV_LIBS} ${LIBZIP_LIBRARY})
 
 # add_library(pydenseflow SHARED src/py_denseflow.cpp)
