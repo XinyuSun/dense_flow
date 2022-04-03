@@ -19,9 +19,12 @@ int excuteJob(std::string vidFile, std::string dump_base, int bound, int type, i
         f_lock.open(lock_path);
 
         // std::cout << dump_path << std::endl;
-
-        calcDenseWarpFlowGPU(vidFile, dump_path, bound, type, step, device_id);
-    
+        try{
+            calcDenseWarpFlowGPU(vidFile, dump_path, bound, type, step, device_id);
+        }
+        catch (cv::Exception){
+            return -1;
+        }
         // unlock
         f_lock.close();
         remove((lock_path).c_str());
