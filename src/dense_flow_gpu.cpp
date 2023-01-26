@@ -24,7 +24,6 @@ using namespace cv;
 using namespace cv::cuda;
 using namespace std;
 
-
 void calcDenseFlowGPU(string file_name, string dump_path, int bound, int type, int step, int dev_id){
     VideoCapture video_stream(file_name);
     CHECK(video_stream.isOpened())<<"Cannot open video stream \""

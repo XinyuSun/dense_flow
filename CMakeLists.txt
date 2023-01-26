@@ -19,45 +19,66 @@ find_package( OpenCV REQUIRED
 	PATHS /mnt/cephfs/home/sunxinyu/local/opencv4
 	NO_DEFAULT_PATH)
 
-set(LIBZIP_DIR /mnt/cephfs/home/sunxinyu/local/libzip)
-set(LIBZIP_INCLUDE_DIR_ZIP ${LIBZIP_DIR}/include)
-set(LIBZIP_INCLUDE_DIR_ZIPCONF ${LIBZIP_DIR}/include)
-find_library(LIBZIP_LIBRARY 
-    NAMES zip
-    PATHS ${LIBZIP_DIR}/lib NO_DEFAULT_PATH)
+find_package( LibZip REQUIRED )
 
-message(${LIBZIP_DIR})
-message(${LIBZIP_LIBRARY})
+if(LibZip_FOUND)
+    message(${LIBZIP_DIR})
+    message(${LIBZIP_LIBRARY})
+
+else(LibZip_FOUND)
+    set(LIBZIP_DIR /mnt/cephfs/home/sunxinyu/local/libzip)
+    set(LIBZIP_INCLUDE_DIR_ZIP ${LIBZIP_DIR}/include)
+    set(LIBZIP_INCLUDE_DIR_ZIPCONF ${LIBZIP_DIR}/include)
+    find_library(LIBZIP_LIBRARY 
+        NAMES zip
+        PATHS ${LIBZIP_DIR}/lib NO_DEFAULT_PATH)
+
+    message(${LIBZIP_DIR})
+    message(${LIBZIP_LIBRARY})
+endif(LibZip_FOUND)
 
 # BOOST
-FIND_PACKAGE(Boost REQUIRED python)
-FIND_PACKAGE(PythonLibs REQUIRED)
+# FIND_PACKAGE(Boost REQUIRED python)
+# FIND_PACKAGE(PythonLibs REQUIRED)
 
 if(LIBZIP_VERSION VERSION_LESS 0.11)
     #old version LibZip
     add_definitions(-DUSE_OBSEL_LIBZIP)
 endif()
 
+set(OpenCV_LIBRARY_USED 
+    opencv_cudaoptflow
+    opencv_xfeatures2d
+    opencv_calib3d
+    opencv_features2d
+    opencv_videoio
+    opencv_imgcodecs
+    opencv_imgproc
+    opencv_cudaarithm
+    opencv_core
+)
+
 include_directories( ${OpenCV_INCLUDE_DIRS} ${LIBZIP_INCLUDE_DIR_ZIP} ${LIBZIP_INCLUDE_DIR_ZIPCONF} include/ include/easylogging++/src include/CLUE/include)
-include_directories(SYSTEM ${Boost_INCLUDE_DIR} ${PYTHON_INCLUDE_DIR})
+# include_directories(SYSTEM ${Boost_INCLUDE_DIR} ${PYTHON_INCLUDE_DIR})
 
-add_library(denseflow src/common.cpp src/dense_flow.cpp src/dense_flow_gpu.cpp src/dense_warp_flow_gpu.cpp src/zip_utils.cpp src/path_tools.cpp)
-target_link_libraries( denseflow ${OpenCV_LIBS} ${LIBZIP_LIBRARY})
+# add_library(denseflow src/common.cpp src/dense_flow.cpp src/dense_flow_gpu.cpp src/dense_warp_flow_gpu.cpp src/zip_utils.cpp src/path_tools.cpp)
+add_library(denseflow src/common.cpp src/dense_warp_flow_gpu.cpp src/zip_utils.cpp src/path_tools.cpp src/dense_flow_gpu.cpp)
+target_link_libraries( denseflow ${OpenCV_LIBRARY_USED} ${LIBZIP_LIBRARY})
 
-add_library(pydenseflow SHARED src/py_denseflow.cpp)
-target_link_libraries(pydenseflow
-        denseflow
-        ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${OpenCV_LIBS}
-        )
+# add_library(pydenseflow SHARED src/py_denseflow.cpp)
+# target_link_libraries(pydenseflow
+#         denseflow
+#         ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${OpenCV_LIBS}
+#         )
 
-add_executable( extract_cpu tools/extract_flow.cpp)
-target_link_libraries( extract_cpu ${OpenCV_LIBS} ${LIBZIP_LIBRARY} denseflow)
+# add_executable( extract_cpu tools/extract_flow.cpp)
+# target_link_libraries( extract_cpu ${OpenCV_LIBS} ${LIBZIP_LIBRARY} denseflow)
 
-add_executable( extract_gpu tools/extract_flow_gpu.cpp)
-target_link_libraries( extract_gpu ${OpenCV_LIBS} ${LIBZIP_LIBRARY} denseflow)
+# add_executable( extract_gpu tools/extract_flow_gpu.cpp)
+# target_link_libraries( extract_gpu ${OpenCV_LIBS} ${LIBZIP_LIBRARY} denseflow)
 
 # add_executable( extract_warp_gpu tools/extract_warp_flow_gpu.cpp)
 # target_link_libraries( extract_warp_gpu ${OpenCV_LIBS} ${LIBZIP_LIBRARY} denseflow)
 
 add_executable( extract_warp_gpu_parallel tools/extract_warp_gpu_parallel.cpp)
-target_link_libraries( extract_warp_gpu_parallel ${OpenCV_LIBS} ${LIBZIP_LIBRARY} denseflow)
+target_link_libraries( extract_warp_gpu_parallel ${OpenCV_LIBRARY_USED} ${LIBZIP_LIBRARY} denseflow)

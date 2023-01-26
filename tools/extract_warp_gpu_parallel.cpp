@@ -19,9 +19,12 @@ int excuteJob(std::string vidFile, std::string dump_base, int bound, int type, i
         f_lock.open(lock_path);
 
         // std::cout << dump_path << std::endl;
-
-        calcDenseFlowGPU(vidFile, dump_path, bound, type, step, device_id);
-    
+        try{
+            calcDenseFlowGPU(vidFile, dump_path, bound, type, step, device_id);
+        }
+        catch (cv::Exception){
+            return -1;
+        }
         // unlock
         f_lock.close();
         remove((lock_path).c_str());
@@ -33,29 +36,32 @@ int excuteJob(std::string vidFile, std::string dump_base, int bound, int type, i
 }
 
 int main(int argc, char** argv){
-	// IO operation
-	const char* keys =
-		{
-			"{ f dsfile_path | ds.txt  | filelist of video }"
+    // IO operation
+    const char* keys =
+        {
+            "{ f dsfile_path | ds.txt  | filelist of video }"
             "{ d dump_base   | data    | dump base path of flow }"
             "{ n num_process | 8       | number of process}"
-			"{ b bound       | 20      | specify the maximum of optical flow}"
-			"{ t type        | 0       | specify the optical flow algorithm }"
-			"{ s step        | 1       | specify the step for frame sampling}"
-		};
+            "{ b bound       | 20      | specify the maximum of optical flow}"
+            "{ t type        | 0       | specify the optical flow algorithm }"
+            "{ s step        | 1       | specify the step for frame sampling}"
+            "{ g num_gpu     | 8       | number of gpu}"
+        };
 
-	CommandLineParser cmd(argc, argv, keys);
-	std::string dsfile_path = cmd.get<std::string>("dsfile_path");
+    CommandLineParser cmd(argc, argv, keys);
+    std::string dsfile_path = cmd.get<std::string>("dsfile_path");
     std::string dump_base = cmd.get<std::string>("dump_base");
     int num_process = cmd.get<int>("num_process");
-	int bound = cmd.get<int>("bound");
+    int bound = cmd.get<int>("bound");
     int type  = cmd.get<int>("type");
     int step = cmd.get<int>("step");
+    int num_gpu = cmd.get<int>("num_gpu");
 
     cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_SILENT);
 
     std::cout << "num process to extract flow: " << num_process << std::endl;
-
+    std::cout << "ds path: " << dsfile_path << std::endl;
+    std::cout << "dump path: " << dump_base << std::endl;
     vector<string> job_vec;
     auto lines = parseDS(dsfile_path, job_vec);
     std::cout << "num videos: " << job_vec.size() << std::endl;
@@ -77,7 +83,7 @@ int main(int argc, char** argv){
      * * * * * * * * * * * * * * * */
     int start_idx = rank_id * lines / num_process;
     int end_idx = rank_id == (num_process - 1) ? lines : (rank_id + 1) * lines / num_process;
-    int gpu_id = rank_id % 8;
+    int gpu_id = rank_id % num_gpu;
 
     printf("process %d ready! getting jobs %d-%d, total %d, using gpu %d\n", rank_id, start_idx, end_idx, end_idx - start_idx, gpu_id);
     fflush(stdout);
@@ -114,5 +120,5 @@ int main(int argc, char** argv){
         }
     }
 
-	return 0;
+    return 0;
 }
