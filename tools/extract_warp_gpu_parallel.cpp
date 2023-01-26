@@ -20,7 +20,7 @@ int excuteJob(std::string vidFile, std::string dump_base, int bound, int type, i
 
         // std::cout << dump_path << std::endl;
 
-        calcDenseWarpFlowGPU(vidFile, dump_path, bound, type, step, device_id);
+        calcDenseFlowGPU(vidFile, dump_path, bound, type, step, device_id);
     
         // unlock
         f_lock.close();
