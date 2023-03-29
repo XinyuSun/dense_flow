@@ -88,7 +88,9 @@ int parseDS(std::string dsfile_path, std::vector<std::string>& job_vec)
         std::string line;
         getline(fin, line);
         if (line.length() > 1){
-            job_vec.push_back(line);
+            std::vector<std::string> split_line;
+            split(line, split_line, " ");
+            job_vec.push_back(split_line[0]);
             num_lines++;
         }
     }
