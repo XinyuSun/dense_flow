@@ -9,7 +9,7 @@ namespace tt = std::chrono;
 
 int excuteJob(std::string vidFile, std::string dump_base, int bound, int type, int step, int device_id)
 {
-    std::string relative_path = pathSplitWithIdx(vidFile, -3, 0);
+    std::string relative_path = pathSplitWithIdx(vidFile, -4, 0);
     std::string dump_path = safelyJoinPath(dump_base, relative_path);
     std::string lock_path = dump_path + ".lock";
 
